@@ -78,9 +78,9 @@ class Data():
         try:
             num = int(number)
             if num <= 0 and is_nb_drones: print(f"nb_drones must be a positive integer"); exit()
+            if (is_start or is_end) and is_max_drones: return self.valid_data.nb_drones
             if num <= 0 and is_max_drones and not is_start and not is_end: print(f"hub max drones must be a postive integer"); exit()
             if num <= 0 and is_max_link_capacity: print(f"line {line} max_link_capacity must be a positive integer {num} is invalid"); exit()
-            if (is_start or is_end) and is_max_drones: return self.valid_data.nb_drones
             return num
         except ValueError:
             if (is_start or is_end) and is_max_drones: return self.valid_data.nb_drones
@@ -150,6 +150,8 @@ class Data():
         hub_a = self.hub_names.get(hub_name_a, None); hub_b = self.hub_names.get(hub_name_b, None)
         if not hub_a: print(f"line {line.number} no hub with this name {hub_name_a}"); exit()
         if not hub_b: print(f"line {line.number} no hub with this name {hub_name_b}"); exit()
+        if hub_name_a not in self.names: print(f"line {line.number} hub missing {hub_name_a}");exit()
+        if hub_name_b not in self.names: print(f"line {line.number} hub missing {hub_name_b}");exit()
         if hub_a == hub_b: print(f"line {line.number} hubs are the same"); exit()
         if (hub_a.name, hub_b.name) in self.coordinates_names or (hub_b.name, hub_a.name) in self.coordinates_names:
             print(f"line {line.number} duplicate coonection"); exit()
@@ -165,6 +167,7 @@ class Data():
         if value[0] != "[": print(f"line {line} metadata must start with '['"); exit()
         if value[-1] != "]": print(f"line {line} metadata must end with ']'"); exit()
         value = value[1:-1]
+        if not value: return metadata
         if "=" not in value: print(f"line {line} metadata must be key=value = is missing")
         key, value = value.split("="); key = key.strip(); value = value.strip()
         if key != "max_link_capacity": print(f"line {line} metadata for connection must be max_link_capacity {key} is invalid"); exit()
