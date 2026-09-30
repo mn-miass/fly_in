@@ -6,9 +6,14 @@ import sys
 class Graph():
     def __init__(self):
         self.nodes: Dict[str, Node] = {}
+        self.start_node = None
 
-    def add_node(self, node: Hub):
+    def add_node(self, node: Hub, is_start=False, is_end=False):
         self.nodes[node.name] = Node(node)
+        if is_start:
+            self.start_node = self.nodes[node.name]
+        if is_end:
+            self.end_node = self.nodes[node.name]
 
     def add_nodes(self, nodes: List[Hub]):
         for node in nodes: self.add_node(node)
@@ -30,7 +35,7 @@ class Node():
     @staticmethod
     def _get_cost(zone):
         if zone == "normal":
-            return 1
+            return 1 
         if zone == "priority":
             return 0.9
         if zone == "restricted":
@@ -40,5 +45,5 @@ class Node():
 
 class Neighbor():
     def __init__(self, node, max_link_capacity):
-        self.neighbor = node
+        self.node = node
         self.max_link_capacity = max_link_capacity
