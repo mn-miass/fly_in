@@ -30,6 +30,7 @@ class Node():
         self.name = hub.name
         self.max_drones = hub.max_drones
         self.cost = self._get_cost(hub.zone)
+        self.zone_type = hub.zone
         self.neighbors = []
 
     @staticmethod
