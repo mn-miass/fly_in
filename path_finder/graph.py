@@ -32,6 +32,8 @@ class Node():
         self.cost = self._get_cost(hub.zone)
         self.zone_type = hub.zone
         self.neighbors = []
+        self.x = hub.x
+        self.y = hub.y
 
     @staticmethod
     def _get_cost(zone):

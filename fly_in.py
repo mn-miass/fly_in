@@ -1,5 +1,7 @@
 from parsing import Parsing, Hub, Connection
 from path_finder import Graph, Node, Neighbor, Dijkstra
+from tester import plot_paths
+
 
 parsing = Parsing()
 graph = Graph()
@@ -12,8 +14,9 @@ graph.get_connection(parsing.connections)
 
 path_finder = Dijkstra(graph.nodes, graph.start_node, graph.end_node)
 path_finder.get_shortest_path()
-path_finder.print_come_from()
+path_finder.get_second_path()
+path_finder.display_path()
 if not path_finder.check_if_end_exit:
     print("No Path between start and end zone")
     exit()
-
+plot_paths(graph.nodes, path_finder.paths)
