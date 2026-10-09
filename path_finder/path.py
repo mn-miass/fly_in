@@ -1,5 +1,5 @@
 class Path():
-    def __init__(self, nodes, length):
+    def __init__(self, nodes, cost):
         self.nodes = nodes
-        self.length = length
+        self.cost = cost
         self.drones = 0

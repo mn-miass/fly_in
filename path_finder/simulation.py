@@ -5,46 +5,60 @@ from .path import Path
 
 class Simulation():
     def __init__(self, drones, paths):
-        self.drones: List[Drones]  = drones
+        self.drones: List[Drone]  = drones
         self.paths: List[Path] = paths
         self.moves: Dict[Drone, str] = {}
+        self._get_capacity()
 
-    def path_capacity(self, path):
-        max_capacity = float("inf")
-        for i, node in enumerate(path.nodes):
-            max_capacity = min(max_capacity, node.max_drones)
-            if i < len(path.nodes) - 1:
-                next_node = path.nodes[i + 1]
-                connection = self.get_connection(node, next_node)
-                max_capacity = min(max_capacity, connection)
-        return max_capacity
+    def assign_path(self):
+        count = 0
+        for drone in self.drones:
+            drone.path = self.paths[count % len(self.paths)]
+            count += 1 
 
-    def get_connection(self, node, next_node):
-        id = None
-        for i, neighbor in enumerate(node.neighbors):
-            if neighbor.node.name == next_node.name:
-                id = i
-                break
-        return node.neighbors[i].max_link_capacity
+    def display_drones(self):
+        for drone in self.drones:
+            print(f"{drone.name} {drone.current_zone.name} {drone.index} {drone.turn_left} {drone.is_finished} ", end="")
+            for node in drone.path.nodes:
+                print(f"{node.name} ", end="")
+            print()
 
-    def has_capacity(self, path):
-        return path.drones < self.path_capacity(path)
+    def run(self):
+        turn = 0
+        moves = []
+        self.moves = {}
+        while not self.all_finished():
+            print(self.all_finished, turn, flush=True)
+            link_usage = {}
+            turn += 1
+            moves = []
+            for drone in self.drones:
+                if drone.is_finished:
+                    continue
+                a = drone.path.nodes[drone.index]
+                b = drone.path.nodes[drone.index + 1]
+                link = frozenset((a, b))
+                if link_usage.get(link, 0) < self.capacities[link]:
+                    link_usage[link] = link_usage.get(link, 0) + 1
+                    drone.index += 1
+                    drone.current_zone = b
+                    moves.append(f"{drone.name}-{drone.current_zone.name}")
+                if drone.index == len(drone.path.nodes) - 1:
+                    drone.is_finished = True
+            self.moves[turn] = moves
 
-    def get_next_zone(self, current_zone):
-        possible_paths = self.get_possible_paths(current_zone)
-        for path in possible_paths:
-            if self.has_capacity(path):
-                return "somthing"
-
-    def get_possible_paths(self, current_zone):
-        possible_paths = []
+    def _get_capacity(self):
+        self.capacities = {}
         for path in self.paths:
-            for node in path.nodes:
-                if node == current_zone:
-                    possible_paths.append(path)
-                    break
-        return possible_paths
+            for i in range(len(path.nodes) - 1):
+                a = path.nodes[i]
+                b = path.nodes[i + 1]
+                link = frozenset((a, b))
+                for node in a.neighbors:
+                    if node.node.name == b.name:
+                        max_link_capacity = node.max_link_capacity
+                        break
+                self.capacities[link] = max_link_capacity
 
-    def get_drone_moves(self):
-        for i, drone in enumerate(self.drones):
-            pass
+    def all_finished(self):
+        return all(drone.is_finished for drone in self.drones)

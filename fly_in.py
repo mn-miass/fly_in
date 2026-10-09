@@ -1,7 +1,6 @@
-from parsing import Parsing, Hub, Connection
-from path_finder import Graph, Node, Neighbor, Dijkstra
+from parsing import Parsing, Hub, Connection      
+from path_finder import Graph, Node, Neighbor, Dijkstra, Simulation, Drones
 from tester import plot_paths
-
 
 parsing = Parsing()
 graph = Graph()
@@ -15,8 +14,16 @@ graph.get_connection(parsing.connections)
 path_finder = Dijkstra(graph.nodes, graph.start_node, graph.end_node)
 path_finder.get_shortest_path()
 path_finder.get_second_path()
-path_finder.display_path()
+
+drones = Drones(parsing.start_hub, parsing.nb_drones)
+simulation = Simulation(drones.drones, path_finder.paths)
+
 if not path_finder.check_if_end_exit:
     print("No Path between start and end zone")
     exit()
-plot_paths(graph.nodes, path_finder.paths)
+
+simulation.assign_path()
+print("run", flush=True)
+simulation.run()
+for turn, move in simulation.moves.items(git status):
+    print(turn, move)

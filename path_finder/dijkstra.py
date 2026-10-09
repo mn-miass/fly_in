@@ -71,13 +71,6 @@ class Dijkstra():
         if not self.paths:
             self.paths.append(path)
         return path
-    
-    def display_path(self):
-        for path in self.paths:
-            print("path: ", end="")
-            for node in path.nodes:
-                print(f"{node.name} ->", end="")
-            print()
 
     @staticmethod
     def _check_same_paths(path_a, path_b):
