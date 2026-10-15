@@ -20,20 +20,20 @@ class Graph():
 
     def get_connection(self, connections: List[Connection]):
         for connection in connections:
-            node_a = self.nodes[connection.hub_a.name]
-            node_b = self.nodes[connection.hub_b.name]
-            node_a.neighbors.append(Neighbor(node_b, connection.max_link_capacity))
-            node_b.neighbors.append(Neighbor(node_a, connection.max_link_capacity))
-
+            node_a = self.nodes[connection.hub_name_a]
+            node_b = self.nodes[connection.hub_name_b]
+            node_a.neighbors[node_b.name] = Neighbor(node_a, connection.max_link_capacity)
+            node_b.neighbors[node_b.name] = Neighbor(node_a, connection.max_link_capacity)
 class Node():
     def __init__(self, hub: Hub):
         self.name = hub.name
         self.max_drones = hub.max_drones
         self.cost = self._get_cost(hub.zone)
         self.zone_type = hub.zone
-        self.neighbors = []
+        self.neighbors = {}
         self.x = hub.x
         self.y = hub.y
+        self.color = hub.color
 
     @staticmethod
     def _get_cost(zone):
