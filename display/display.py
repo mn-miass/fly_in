@@ -2,17 +2,37 @@ import pygame
 import sys
 
 
+class DroneDisplay():
+    def __init__(self, pos, image):
+        self.x = pos[0]
+        self.y = pos[1]
+        self.image = image
+        self._draw_drone()
+
+    def _draw_drone(self):
+        self.rect = self.image.get_rect(center = (self.x, self.y))
+
+    def move_drone(self, new_coord):
+        pass
+
+
 class Display():
-    def __init__(self, nodes):
+    def __init__(self, nodes, start_node, nb_drones):
         pygame.init()
+        self.nb_drones = nb_drones;
         self.nodes = nodes;
+        self.start = start_node
         info = pygame.display.Info()
         self.width = info.current_w // 2
         self.height = info.current_h // 2
-        bg_image = pygame.image.load("./display/bg.webp")
+        bg_image = pygame.image.load("./assets/bg.webp")
+        drone_image = pygame.image.load("./assets/drone.png")
         self.bg_image = pygame.transform.scale(bg_image, (self.width, self.height))
+        self.drone_image = pygame.transform.scale(drone_image, (40, 40))
         self.running = True
+        self.drones = []
         self.fit_to_window()
+        self.creat_drones()
 
     def run(self):
         pygame.display.set_caption("Fly_in")
@@ -36,6 +56,7 @@ class Display():
     def draw(self):
         self.draw_connections()
         self.draw_zones()
+        self.draw_drones()
         pygame.display.flip()
 
 
@@ -61,6 +82,15 @@ class Display():
                 pygame.draw.line(
                     self.screen, pygame.Color("black"), start_px, end_px, 2
                 )
+
+    def creat_drones(self):
+        for _ in range(self.nb_drones):
+            self.drones.append(DroneDisplay(self._to_screen(self.start.x, self.start.y), self.drone_image))
+
+
+    def draw_drones(self):
+        for drone in self.drones:
+            self.screen.blit(self.drone_image, drone.rect)
 
     def _to_screen(self, x, y):
         p_x = round(self.offset_x + x * self.scale)
