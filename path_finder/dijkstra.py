@@ -22,16 +22,17 @@ class Dijkstra():
             node, cost = self._get_min(heap)
             heap.remove((cost, node))
             for neighbor in node.neighbors:
-                if neighbor.node in visited:
+                neighbor = self.nodes[neighbor]
+                if neighbor in visited:
                     continue
-                if neighbor.node.zone_type == "blocked":
+                if neighbor.zone_type == "blocked":
                     continue
-                neighbor_cost = cost + neighbor.node.cost
-                if neighbor_cost < dist.get(neighbor.node, float("inf")):
-                    dist[neighbor.node] = neighbor_cost
-                    come_from[neighbor.node] = node
-                    heap.append((neighbor_cost, neighbor.node))
-                if neighbor.node == self.end:
+                neighbor_cost = cost + neighbor.cost
+                if neighbor_cost < dist.get(neighbor, float("inf")):
+                    dist[neighbor] = neighbor_cost
+                    come_from[neighbor] = node
+                    heap.append((neighbor_cost, neighbor))
+                if neighbor == self.end:
                     break
             visited.append(node)
         if not self.check_if_end_exit(come_from):
@@ -94,3 +95,9 @@ class Dijkstra():
                 current = k
                 min = v
         return (current, min)
+
+    def _print_paths(self):
+        for path in self.paths:
+            for node in path.nodes:
+                print(node.name, end=" ")
+            print()

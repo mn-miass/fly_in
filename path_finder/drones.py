@@ -3,7 +3,7 @@ class Drone():
         self.current_zone = start
         self.name = name
         self.path = []
-        self.index = 0
+        self.index = 0 #position in the zones
         self.turn_left = 0
         self.current_x = start.x
         self.current_y = start.y

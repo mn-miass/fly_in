@@ -7,10 +7,6 @@ class DroneDisplay():
         self.x = pos[0]
         self.y = pos[1]
         self.image = image
-        self._draw_drone()
-
-    def _draw_drone(self):
-        self.rect = self.image.get_rect(center = (self.x, self.y))
 
     def move_drone(self, new_coord):
         pass
@@ -29,6 +25,7 @@ class Display():
         drone_image = pygame.image.load("./assets/drone.png")
         self.bg_image = pygame.transform.scale(bg_image, (self.width, self.height))
         self.drone_image = pygame.transform.scale(drone_image, (40, 40))
+        self.zoom = 1.0
         self.running = True
         self.drones = []
         self.fit_to_window()
@@ -52,8 +49,14 @@ class Display():
                 if pygame.key == pygame.K_ESCAPE:
                     self.running = False
                     sys.exit()
+            if event.type == pygame.MOUSEWHEEL:
+                self.zoom = max(0.3, min(self.zoom * 1.1 ** event.y, 5))
+            if event.type == pygame.MOUSEMOTION and event.buttons[0]:
+                self.offset_x += event.rel[0] / self.zoom
+                self.offset_y += event.rel[1] / self.zoom
 
     def draw(self):
+        self.screen.blit(self.bg_image, (0, 0))
         self.draw_connections()
         self.draw_zones()
         self.draw_drones()
@@ -61,17 +64,23 @@ class Display():
 
 
     def draw_zones(self):
+        border = {
+            "normal": pygame.Color("gray"),
+            "blocked": pygame.Color("black"),
+            "restricted": pygame.Color("red"),
+            "priority": pygame.Color("blue")
+        }
         for node in self.nodes.values():
             center = self._to_screen(node.x, node.y)
             try:
                 fill_color = pygame.Color(node.color)
-            except ValueError:
+            except (ValueError, TypeError):
                 fill_color = (120, 120, 140)
             pygame.draw.circle(
                 self.screen, fill_color, center, 22
             )
             pygame.draw.circle(
-                self.screen, (230, 230, 240), center, 2
+                self.screen, border[node.zone_type], center, 22, 4
             )
 
     def draw_connections(self):
@@ -85,16 +94,24 @@ class Display():
 
     def creat_drones(self):
         for _ in range(self.nb_drones):
-            self.drones.append(DroneDisplay(self._to_screen(self.start.x, self.start.y), self.drone_image))
+            self.drones.append(
+                DroneDisplay((self.start.x, self.start.y), self.drone_image)
+            )
 
 
     def draw_drones(self):
         for drone in self.drones:
-            self.screen.blit(self.drone_image, drone.rect)
+            center = self._to_screen(drone.x, drone.y)
+            rect = drone.image.get_rect(center=center)
+            self.screen.blit(drone.image, rect)
 
     def _to_screen(self, x, y):
         p_x = round(self.offset_x + x * self.scale)
         p_y = round(self.offset_y + y * self.scale)
+        c_x = self.width / 2
+        c_y = self.height / 2
+        p_x = round(c_x + (p_x - c_x) * self.zoom)
+        p_y = round(c_y + (p_y - c_y) * self.zoom)
         return (p_x, p_y)
 
     def fit_to_window(self):

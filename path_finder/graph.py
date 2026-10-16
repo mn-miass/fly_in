@@ -23,7 +23,7 @@ class Graph():
             node_a = self.nodes[connection.hub_name_a]
             node_b = self.nodes[connection.hub_name_b]
             node_a.neighbors[node_b.name] = Neighbor(node_a, connection.max_link_capacity)
-            node_b.neighbors[node_b.name] = Neighbor(node_a, connection.max_link_capacity)
+            node_b.neighbors[node_a.name] = Neighbor(node_b, connection.max_link_capacity)
 class Node():
     def __init__(self, hub: Hub):
         self.name = hub.name

@@ -2,13 +2,15 @@ from typing import Dict, List
 from .drones import Drones, Drone
 from .path import Path
 
+from collections import defaultdict
+from typing import Any, DefaultDict, List, Set
 
 class Simulation():
     def __init__(self, drones, paths):
         self.drones: List[Drone]  = drones
         self.paths: List[Path] = paths
         self.moves: Dict[Drone, str] = {}
-        self._get_capacity()
+        self._get_capacity() # get number of connections between each zone
 
     def assign_path(self):
         count = 0
@@ -23,28 +25,68 @@ class Simulation():
                 print(f"{node.name} ", end="")
             print()
 
-    def run(self):
-        turn = 0
-        moves = []
+
+
+
+    def _enter(self, drone: Drone, moves: List[str]) -> None:
+        """Move the drone onto the next zone of its path and record it."""
+        drone.index += 1
+        drone.current_zone = drone.path.nodes[drone.index]
+        moves.append(f"{drone.name}-{drone.current_zone.name}")
+        if drone.index == len(drone.path.nodes) - 1:
+            drone.is_finished = True
+
+    def run(self) -> None:
+        """Simulate turn by turn and store each turn in self.moves."""
         self.moves = {}
+        end = self.paths[0].nodes[-1]
+        zone_count: DefaultDict[Any, int] = defaultdict(int)
+        zone_count[self.paths[0].nodes[0]] = len(self.drones)
+        turn = 0
         while not self.all_finished():
-            print(self.all_finished, turn, flush=True)
-            link_usage = {}
             turn += 1
-            moves = []
+            link_usage: DefaultDict[Any, int] = defaultdict(int)
+            moves: List[str] = []
+            moved: Set[Drone] = set()
+
+            # 1) drones crossing toward a restricted zone must arrive now
             for drone in self.drones:
-                if drone.is_finished:
-                    continue
-                a = drone.path.nodes[drone.index]
-                b = drone.path.nodes[drone.index + 1]
-                link = frozenset((a, b))
-                if link_usage.get(link, 0) < self.capacities[link]:
-                    link_usage[link] = link_usage.get(link, 0) + 1
-                    drone.index += 1
-                    drone.current_zone = b
-                    moves.append(f"{drone.name}-{drone.current_zone.name}")
-                if drone.index == len(drone.path.nodes) - 1:
-                    drone.is_finished = True
+                if drone.turn_left > 0:
+                    drone.turn_left = 0
+                    self._enter(drone, moves)
+                    moved.add(drone)
+
+            # 2) the others try to move. We repeat the sweep so a space
+            #    freed by a drone later in the list is used this turn.
+            progress = True
+            while progress:
+                progress = False
+                for drone in self.drones:
+                    if drone.is_finished or drone in moved:
+                        continue
+                    nodes = drone.path.nodes
+                    a = nodes[drone.index]
+                    b = nodes[drone.index + 1]
+                    link = frozenset((a, b))
+
+                    if link_usage[link] >= self.capacities[link]:
+                        continue
+                    if b is not end and zone_count[b] >= b.max_drones:
+                        continue
+
+                    link_usage[link] += 1
+                    zone_count[a] -= 1
+                    zone_count[b] += 1
+                    moved.add(drone)
+                    progress = True
+
+                    if b.zone_type == "restricted":
+                        drone.turn_left = 1
+                        moves.append(f"{drone.name}-{a.name}-{b.name}")
+                    else:
+                        self._enter(drone, moves)
+            if not moves:
+                raise RuntimeError("Deadlock: no drone can move")
             self.moves[turn] = moves
 
     def _get_capacity(self):
@@ -54,10 +96,7 @@ class Simulation():
                 a = path.nodes[i]
                 b = path.nodes[i + 1]
                 link = frozenset((a, b))
-                for node in a.neighbors:
-                    if node.node.name == b.name:
-                        max_link_capacity = node.max_link_capacity
-                        break
+                max_link_capacity = a.neighbors[b.name].max_link_capacity
                 self.capacities[link] = max_link_capacity
 
     def all_finished(self):
