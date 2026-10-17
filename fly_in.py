@@ -11,8 +11,6 @@ graph.add_node(parsing.start_hub, is_start=True)
 graph.add_node(parsing.end_hub, is_end=True)
 graph.get_connection(parsing.connections)
 
-# display = Display(graph.nodes, graph.start_node, parsing.nb_drones)
-# display.run()
 # path_finder = Dijkstra(graph.nodes, graph.start_node, graph.end_node)
 # path_finder.get_shortest_path()
 # path_finder.get_second_path()
@@ -22,9 +20,12 @@ graph.get_connection(parsing.connections)
 # if not path_finder.check_if_end_exit:
 #     print("No Path between start and end zone")
 #     exit()
-planer = Planer([], graph)
-planer.check_reachable()
+planer = Planer(parsing, graph)
+moves = planer.plan_all()
+planer.print_moves(moves)
 
+display = Display(graph.nodes, graph.start_node, parsing.nb_drones, moves)
+display.run()
 # drones = Drones(parsing.start_hub, parsing.nb_drones)
 # simulation = Simulation(drones.drones, path_finder.paths)
 

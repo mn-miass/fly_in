@@ -7,6 +7,7 @@ class Graph():
     def __init__(self):
         self.nodes: Dict[str, Node] = {}
         self.start_node = None
+        self.link_names = {}
 
     def add_node(self, node: Hub, is_start=False, is_end=False):
         self.nodes[node.name] = Node(node)
@@ -22,8 +23,9 @@ class Graph():
         for connection in connections:
             node_a = self.nodes[connection.hub_name_a]
             node_b = self.nodes[connection.hub_name_b]
-            node_a.neighbors[node_b.name] = Neighbor(node_a, connection.max_link_capacity)
-            node_b.neighbors[node_a.name] = Neighbor(node_b, connection.max_link_capacity)
+            self.link_names[frozenset((connection.hub_name_a, connection.hub_name_b))] = f"{connection.hub_name_a}-{connection.hub_name_b}"
+            node_a.neighbors[node_b.name] = Neighbor(node_b, connection.max_link_capacity)
+            node_b.neighbors[node_a.name] = Neighbor(node_a, connection.max_link_capacity)
 class Node():
     def __init__(self, hub: Hub):
         self.name = hub.name
@@ -48,5 +50,6 @@ class Node():
 
 class Neighbor():
     def __init__(self, node, max_link_capacity):
+        self.name = node.name
         self.node = node
         self.max_link_capacity = max_link_capacity
