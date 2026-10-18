@@ -1,4 +1,5 @@
 import pygame
+import sys
 
 
 class DroneDisplay():
@@ -6,45 +7,27 @@ class DroneDisplay():
         self.name = f"D{drone_id}"
         self.x = pos[0]
         self.y = pos[1]
-        self.start_x = pos[0]
-        self.start_y = pos[1]
         self.target_x = pos[0]
         self.target_y = pos[1]
         self.image = image
-        self.progress = 1.0
-        self.duration = 1.0
 
-    def move_drone(self, new_coord, duration_ms):
-        self.start_x = self.x
-        self.start_y = self.y
+    def move_drone(self, new_coord):
         self.target_x = new_coord[0]
         self.target_y = new_coord[1]
-        self.duration = max(duration_ms, 1)
-        self.progress = 0.0
 
-    def reset(self, pos):
-        self.x = self.start_x = self.target_x = pos[0]
-        self.y = self.start_y = self.target_y = pos[1]
-        self.progress = 1.0
-
-    def update(self, dt_ms):
-        if self.progress >= 1.0:
-            return
-        self.progress = min(self.progress + dt_ms / self.duration, 1.0)
-        # smoothstep easing: slow start, slow end
-        t = self.progress * self.progress * (3 - 2 * self.progress)
-        self.x = self.start_x + (self.target_x - self.start_x) * t
-        self.y = self.start_y + (self.target_y - self.start_y) * t
+    def update(self):
+        self.x += (self.target_x - self.x) * 0.1
+        self.y += (self.target_y - self.y) * 0.1
+        if abs(self.target_x - self.x) < 0.01:
+            self.x = self.target_x
+        if abs(self.target_y - self.y) < 0.01:
+            self.y = self.target_y
 
 
 class Display():
-    def __init__(self, nodes, start_node, nb_drones, turns,
-                 step_delay=800, auto_play=True):
+    def __init__(self, nodes, start_node, nb_drones, turns):
         self.turns = turns
         self.turn_index = 0
-        self.step_delay = step_delay      # ms between two turns
-        self.auto_play = auto_play
-        self.step_timer = 0
         pygame.init()
         self.font = pygame.font.Font(None, 20)
         self.big_font = pygame.font.Font(None, 36)
@@ -67,79 +50,44 @@ class Display():
         self.fit_to_window()
         self.creat_drones()
 
-    # ------------------------------------------------------------------ #
-    # Main loop
-    # ------------------------------------------------------------------ #
     def run(self):
         pygame.display.set_caption("Fly_in")
         self.screen = pygame.display.set_mode((self.width, self.height))
+        self.screen.blit(self.bg_image, (0, 0))
         while self.running:
-            dt = self.clock.tick(60)
             self.handle_events()
-            self.auto_advance(dt)
-            self.update_drones(dt)
+            self.update_drones()
             self.draw()
+            self.clock.tick(60)
         pygame.quit()
 
-    def auto_advance(self, dt):
-        if not self.auto_play or self.is_finished():
-            return
-        self.step_timer += dt
-        if self.step_timer >= self.step_delay:
-            self.step_timer = 0
-            self.next_step()
-
-    def update_drones(self, dt):
+    def update_drones(self):
         for drone in self.drones:
-            drone.update(dt)
+            drone.update()
 
-    def is_finished(self):
-        if not self.turns:
-            return True
-        return self.turn_index >= max(len(path) for path in self.turns)
-
-    # ------------------------------------------------------------------ #
-    # Events
-    # ------------------------------------------------------------------ #
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+                sys.exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.running = False
-                elif event.key == pygame.K_SPACE:
-                    self.auto_play = not self.auto_play      # pause / resume
-                elif event.key == pygame.K_RIGHT and not self.auto_play:
-                    self.next_step()                         # manual step
-                elif event.key == pygame.K_UP:
-                    self.step_delay = max(100, self.step_delay - 100)
-                elif event.key == pygame.K_DOWN:
-                    self.step_delay = min(3000, self.step_delay + 100)
-                elif event.key == pygame.K_r:
-                    self.restart()
+                    sys.exit()
+                if event.key == pygame.K_SPACE:
+                    self.next_step()
             if event.type == pygame.MOUSEWHEEL:
                 self.zoom = max(0.3, min(self.zoom * 1.1 ** event.y, 5))
             if event.type == pygame.MOUSEMOTION and event.buttons[0]:
                 self.offset_x += event.rel[0] / self.zoom
                 self.offset_y += event.rel[1] / self.zoom
 
-    def restart(self):
-        self.turn_index = 0
-        self.step_timer = 0
-        for drone in self.drones:
-            drone.reset((self.start.x, self.start.y))
-
-    # ------------------------------------------------------------------ #
-    # Drawing
-    # ------------------------------------------------------------------ #
     def draw(self):
         self.screen.blit(self.bg_image, (0, 0))
         self.draw_connections()
         self.draw_zones()
         self.draw_drones()
         self.draw_turn()
-        self.draw_status()
         pygame.display.flip()
 
     def draw_turn(self):
@@ -149,22 +97,6 @@ class Display():
         rect = label.get_rect(topleft=(20, 20))
         pygame.draw.rect(
             self.screen, pygame.Color("black"), rect.inflate(20, 10)
-        )
-        self.screen.blit(label, rect)
-
-    def draw_status(self):
-        if self.is_finished():
-            state = "Finished (R: restart)"
-        elif self.auto_play:
-            state = "Playing"
-        else:
-            state = "Paused (RIGHT: next turn)"
-        text = (f"{state} | {self.step_delay} ms/turn | "
-                f"SPACE: pause  UP/DOWN: speed")
-        label = self.font.render(text, True, pygame.Color("white"))
-        rect = label.get_rect(bottomleft=(20, self.height - 15))
-        pygame.draw.rect(
-            self.screen, pygame.Color("black"), rect.inflate(16, 8)
         )
         self.screen.blit(label, rect)
 
@@ -181,7 +113,9 @@ class Display():
                 fill_color = pygame.Color(node.color)
             except (ValueError, TypeError):
                 fill_color = (120, 120, 140)
-            pygame.draw.circle(self.screen, fill_color, center, 22)
+            pygame.draw.circle(
+                self.screen, fill_color, center, 22
+            )
             pygame.draw.circle(
                 self.screen, border[node.zone_type], center, 22, 4
             )
@@ -215,9 +149,6 @@ class Display():
             label_rect = label.get_rect(midbottom=(center[0], center[1] - 22))
             self.screen.blit(label, label_rect)
 
-    # ------------------------------------------------------------------ #
-    # Simulation steps
-    # ------------------------------------------------------------------ #
     def apply_step(self, drone, step):
         if "-" in step:
             start_name, end_name = step.split("-", 1)
@@ -226,20 +157,14 @@ class Display():
         else:
             x = self.nodes[step].x
             y = self.nodes[step].y
-        # the move takes ~90% of a turn so drones arrive before the next one
-        drone.move_drone((x, y), self.step_delay * 0.9)
+        drone.move_drone((x, y))
 
     def next_step(self):
-        if self.is_finished():
-            return
         for drone, path in zip(self.drones, self.turns):
             if self.turn_index < len(path):
                 self.apply_step(drone, path[self.turn_index])
         self.turn_index += 1
 
-    # ------------------------------------------------------------------ #
-    # Coordinates
-    # ------------------------------------------------------------------ #
     def _to_screen(self, x, y):
         p_x = round(self.offset_x + x * self.scale)
         p_y = round(self.offset_y - y * self.scale)
@@ -265,5 +190,4 @@ class Display():
         extra_x = avail_w - map_w * self.scale
         extra_y = avail_h - map_h * self.scale
         self.offset_x = margin + extra_x / 2 - min_x * self.scale
-        # y is flipped in _to_screen, so anchor on max_y (not min_y)
-        self.offset_y = margin + extra_y / 2 + max_y * self.scale
+        self.offset_y = margin + extra_y / 2 - min_y * self.scale
