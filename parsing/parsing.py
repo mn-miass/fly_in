@@ -13,7 +13,16 @@ class Parsing():
         self.end_hub: Hub = self.data.valid_data.end_hub
         self.hubs: list[Hub] = self.data.valid_data.hubs
         self.connections: list[Connection] = self.data.valid_data.connections
+        self._check_start_end()
 
     def _get_path(self):
         if len(sys.argv) != 2: print("Number of argument should not be more then 2 <project_name> <file_path>"); exit()
         return sys.argv[1]
+
+    def _check_start_end(self):
+        if not self.start_hub:
+            print("MISSING START HUB")
+            sys.exit()
+        if not self.end_hub:
+            print("MISSING END HUB")
+            sys.exit()

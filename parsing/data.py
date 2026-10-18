@@ -49,11 +49,11 @@ class Data():
             data = data.split("#")[0].strip()
             if data:
                 if ":" not in data:
-                    self.display_error("line {num}: missing the ':' invalid_line: {data} ALL LINES MUST HAVE ':'")
+                    self.display_error(f"line {num}: missing the ':' invalid_line: {data} ALL LINES MUST HAVE ':'")
                 try:
-                    key, value = data.split(":")
+                    key, value = data.split(":", 1)
                 except ValueError :
-                    self.display_error(f"line {num}: have more then one ':' invalid_line: {data}")
+                    self.display_error(f"line :{num} each line must have one ':' invalid_line: {data}")
                 self.lines.append(Line(num, data, key.strip(), value.strip()))
 
     def _check_no_data(self):
@@ -75,7 +75,7 @@ class Data():
             elif line.key == "start_hub": self._validate_hub(line, is_start=True)
             elif line.key == "end_hub": self._validate_hub(line, is_end=True)
             elif line.key == "connection": self._validate_connection(line)
-            else: print(f"line {line} in valid key should be one of the folowing [<hub> <start_hub> <end_hub> <nb_drones> <connection>]"); exit()
+            else: print(f"line {line.number} in valid key it should be only one of the folowing [<hub> <start_hub> <end_hub> <nb_drones> <connection>]"); exit()
 
     def _validate_integer(self, number, line, is_nb_drones=False, is_start=False, is_end=False, is_coordinates=False, is_max_drones=False, is_max_link_capacity=False):
         if "_" in number:
@@ -181,11 +181,13 @@ class Data():
 
     def _validate_connection(self, line):
         values = line.value.split()
+        if not line.value:
+            self.display_error(f"line {line.number} connection must be in the folowing form hub_a-hub_b")
         if len(values) > 2:
             self.display_error(f"line {line.number} wrong format it must be <hub1>-<hub2> [metadata]")
-        if "-" not in values[0]:
+        if "-" not in values[0] or "-" not in line.value:
             self.display_error(f"line {line.number} connection must have the '-'")
-        hub_name_a, hub_name_b = values[0].split("-")
+        hub_name_a, hub_name_b = values[0].split("-", 1)
         hub_a = self.hub_names.get(hub_name_a, None)
         hub_b = self.hub_names.get(hub_name_b, None)
         if not hub_a:

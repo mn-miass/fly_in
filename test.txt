@@ -1,13 +1,14 @@
-nb_drones: 13
-start_hub: s 0 0
-hub: r 1 0 [zone=restricted max_drones=1]
-hub: q 1 1 [zone=restricted max_drones=2]
-hub: c 2 0 [max_drones=3]
-hub: d 3 0 [max_drones=3]
-end_hub: e 4 0
-connection: s-r
-connection: s-q
-connection: r-c
-connection: q-c [max_link_capacity=3]
-connection: c-d [max_link_capacity=2]
-connection: d-e
+nb_drones: 2
+
+start_hub: sta:rt 0 0 [color=green]
+hub: waypoint1 1 0 [color=blue]
+hub: waypoint2 2 0 [color=blue]
+end_hub: goal 3 0 [color=red]
+
+connection: sta:rt-waypoint1
+connection: waypoint1-waypoint2
+connection: waypoint2-goal
+
+
+#integer convesion max_drones for start +max_link_capacity
+#connection split
